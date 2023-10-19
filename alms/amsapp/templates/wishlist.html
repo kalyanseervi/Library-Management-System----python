@@ -1,0 +1,17 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>My Wishlist</h1>
+    <ul>
+        {% for data in wishlist_data %}
+        <li>
+            <h2>{{ data.book_data.volumeInfo.title }}</h2>
+            <p>Author: {{ data.book_data.volumeInfo.authors.0 }}</p>
+            <p>Image: <img src="{{ data.book_data.volumeInfo.imageLinks.thumbnail }}" alt="{{ data.book_data.volumeInfo.imageLinks.thumbnail }}"></p>
+            <p>Added on: {{ data.item.added_at }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

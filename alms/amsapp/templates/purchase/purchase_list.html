@@ -1,0 +1,10 @@
+{% extends "index.html" %}
+
+{% block content %}
+    <h1>Purchase List</h1>
+    <ul>
+        {% for purchase in purchases %}
+            <li>{{ purchase }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

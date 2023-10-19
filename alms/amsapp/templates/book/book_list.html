@@ -1,0 +1,118 @@
+<!-- book_list.html -->
+{% extends "index.html" %}
+
+{% block content %}
+<h1>Book List</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Book ID</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for book in books %}
+        <div class="book" id="book-{{ book.id }}">
+            <h2>{{ book.title }}</h2>
+            <p>{{ book.author }}</p>
+            <a href="#" class="edit-book" data-id="{{ book.id }}" data-title="{{ book.title }}" data-author="{{ book.author }}">Edit</a>
+            <a href="#" class="delete-book" data-id="{{ book.id }}">Delete</a>
+        </div>
+        {% endfor %}
+        
+    </tbody>
+</table>
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Variables to store book data
+    let currentBookId;
+    let currentBookTitle;
+    let currentBookAuthor;
+
+    // Edit button click event
+    $(".edit-book").click(function() {
+        currentBookId = $(this).data("id");
+        currentBookTitle = $(this).data("title");
+        currentBookAuthor = $(this).data("author");
+
+        // Show a modal with an edit form
+        // You can use a library like Bootstrap modal or create your own modal
+        // For this example, let's assume you have a Bootstrap modal
+        $("#editModal").modal("show");
+
+        // Populate the edit form with the current book data
+        $("#editTitle").val(currentBookTitle);
+        $("#editAuthor").val(currentBookAuthor);
+    });
+
+    // Save changes in the edit form
+    $("#editSave").click(function() {
+        // Get updated values from the form
+        const newTitle = $("#editTitle").val();
+        const newAuthor = $("#editAuthor").val();
+
+        // Send an AJAX request to update the book
+        $.ajax({
+            method: "POST",
+            url: `/amsapp/book/${currentBookId}/edit/`,
+            data: {
+                title: newTitle,
+                author: newAuthor,
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            },
+            success: function(response) {
+                // Handle the success response
+                // Close the modal and update the book data on the page
+                $("#editModal").modal("hide");
+                currentBookTitle = newTitle;
+                currentBookAuthor = newAuthor;
+                // Update the book details on the page as needed
+            },
+            error: function(error) {
+                // Handle the error response
+                alert("Failed to update the book. Please try again.");
+            }
+        });
+    });
+
+    // Delete button click event
+    $(".delete-book").click(function() {
+        currentBookId = $(this).data("id");
+
+        // Show a confirmation modal
+        // You can use a library like Bootstrap modal or create your own modal
+        // For this example, let's assume you have a Bootstrap modal
+        $("#deleteModal").modal("show");
+    });
+
+    // Confirm deletion
+    $("#confirmDelete").click(function() {
+        // Send an AJAX request to delete the book
+        $.ajax({
+            method: "POST",
+            url: `/amsapp/book/${currentBookId}/delete/`,
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            },
+            success: function(response) {
+                // Handle the success response
+                // Close the modal and remove the book from the page
+                $("#deleteModal").modal("hide");
+                $(`#book-${currentBookId}`).remove(); // Remove the book element
+            },
+            error: function(error) {
+                // Handle the error response
+                alert("Failed to delete the book. Please try again.");
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
