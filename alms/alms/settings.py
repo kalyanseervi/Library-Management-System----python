@@ -36,8 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'amsapp.apps.AmsappConfig',
-    'corsheaders',
-
+    
 ]
 
 MIDDLEWARE = [
@@ -48,7 +47,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 
@@ -74,17 +72,12 @@ WSGI_APPLICATION = 'alms.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'almsdb',
-        'USER': 'almsdb',
-        'PASSWORD': 'almsdb',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
     }
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -140,7 +133,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-
-CORS_ALLOW_ALL_ORIGINS = True
+APPEND_SLASH = False
 
 
