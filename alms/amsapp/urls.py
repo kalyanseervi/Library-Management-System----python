@@ -25,35 +25,37 @@ urlpatterns = [
     path('generate_bill/<str:book_id>/', views.generate_bill, name='generate_bill'),
     path('generate_bill_pdf/<int:bill_id>/', views.generate_bill_pdf, name='generate_bill_pdf'),
     path('bills_list/', views.bills_list, name='bills_list'),
-    # path('dealers/', views.dealers_list, name='dealers_list'),
-    # path('books_list/', views.books_list, name='books_list'),
-    # path('purchases/', views.purchase_list, name='purchase_list'),
-    # path('return_purchases/', views.return_purchase_list, name='return_purchase_list'),
-    # path('transactions/', views.transaction_list, name='transaction_list'),
-    # path('create_dealer/', views.create_dealer, name='create_dealer'),
-    # path('add_book/', views.add_book, name='add_book'),
-    # path('add_purchase/', views.add_purchase, name='add_purchase'),
-    # path('stock_mgmt/', views.stock_mgmt, name='stock_mgmt'),
-    # path('create/', views.create_bookstock, name='create_bookstock'),
-    # path('list/', views.list_bookstock, name='bookstock_list'),
+
     path('dealers/create/', views.create_dealer, name='create_dealer'),
     path('dealers/list/', views.dealer_list, name='dealer_list'),
     path('dealers/update/<int:dealer_id>/', views.update_dealer, name='update_dealer'),
     path('dealers/delete/<int:dealer_id>/', views.delete_dealer, name='delete_dealer'),
 
-    path('amsapp/book/create/', views.create_book, name='create_book'),
+     path('book/create/', views.create_book, name='create_book'),
     path('book/list/', views.book_list, name='book_list'),
-    path('book/<int:pk>/edit/', views.edit_book, name='edit_book'),
-    path('book/<int:pk>/delete/', views.delete_book, name='delete_book'),
+    path('book/update/<int:book_id>/', views.update_book, name='update_book'),
+    path('book/delete/<int:book_id>/', views.delete_book, name='delete_book'),
 
     path('purchase/create/', views.create_purchase, name='create_purchase'),
     path('purchase/list/', views.purchase_list, name='purchase_list'),
     path('purchase/update/<int:purchase_id>/', views.update_purchase, name='update_purchase'),
     path('purchase/delete/<int:purchase_id>/', views.delete_purchase, name='delete_purchase'),
 
+
+    path('bookstock/', views.book_stock, name='book_stock'),
+
+
+    path('create-book-transaction/', views.create_book_transaction, name='create_book_transaction'),
+    path('book-transaction-list/', views.book_transaction_list, name='book_transaction_list'),
+    path('update-transaction/<int:transaction_id>/', views.update_book_transaction, name='update-transaction'),
+
     path('fetch-more-data', views.fetch_more_data, name='fetch_more_data'),
     path('add_to_wishlist/<str:book_id>/', views.add_to_wishlist, name='add_to_wishlist'),
     path('wishlist/', views.get_wishlist, name='wishlist'),
+    path('settings/', views.settings, name='settings'),
+    path('send_push', views.send_push, name='send_push'),
+    path('pushNtf/',views.pushNtf, name='pushNtf'),
+    
 
 
 

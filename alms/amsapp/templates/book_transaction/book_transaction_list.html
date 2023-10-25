@@ -1,0 +1,124 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="bg-trueGray-100 py-10">
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow-lg">
+        <h1 class="text-2xl font-semibold mb-4">Book Transactions</h1>
+        <div class="mb-4">
+            <a href="{% url 'create_book_transaction' %}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Create Transaction</a>
+        </div>
+        <table class="min-w-full border border-gray-300">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Book</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Author</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">User</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Checkout Date</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Checkin Date</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Book Quantity</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Total Price</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Payment Type</th>
+                    <th class="py-2 px-4 bg-gray-100 border-b">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for transaction in transactions %}
+                <tr>
+                    <td class="py-2 px-4 border-b">{{ transaction.book }}</td>
+                    <td class="py-2 px-4 border-b">{{ transaction.author }}</td>
+                    <td class="py-2 px-4 border-b">{{ transaction.username }}</td>
+                    <td class="py-2 px-4 border-b">{{ transaction.checkout|date }}</td>
+                    <td class="py-2 px-4 border-b">{{ transaction.checkin_date|default:"Not Checked In" }}</td>
+                    <td class="py-2 px-4 border-b">{{ transaction.bookquantity }}</td>
+                    <td class="py-2 px-4 border-b">{{ transaction.totalPrice }}</td>
+                    <td class="py-2 px-4 border-b">{{ transaction.get_paymenttype_display }}</td>
+                    <td>
+                        <button class="edit-button bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Edit</button>
+                    </td>
+                </tr>
+                <tr class="edit-row" style="display: none;">
+                    <td colspan="8">
+                        <form method="post" id="edit-form-{{ transaction.tr_id }}" class="transaction-form">
+                            {% csrf_token %}
+                            {{ transaction_form.as_p  }}
+                            <button class="save-button bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                    data-transaction-id="{{ transaction.tr_id }}">Save</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Get all relevant elements
+    const editButtons = document.querySelectorAll('.edit-button');
+    const editRows = document.querySelectorAll('.edit-row');
+    const saveButtons = document.querySelectorAll('.save-button');
+    const transactionForms = document.querySelectorAll('.transaction-form');
+
+    // Function to toggle between edit and save modes
+    const toggleEditMode = (index) => {
+        editRows[index].style.display = 'table-row';
+        transactionForms[index].style.display = 'block';
+    };
+
+    // Add click event listeners to "Edit" buttons
+    editButtons.forEach((button, index) => {
+        button.addEventListener('click', () => {
+            toggleEditMode(index);
+        });
+    });
+
+    // Add click event listeners to "Save" buttons
+    saveButtons.forEach((button, index) => {
+        button.addEventListener('click', () => {
+            // Handle form submission here using JavaScript or AJAX
+            // Update the book information in the database
+
+            // After saving, hide the edit row and form
+            editRows[index].style.display = 'none';
+            transactionForms[index].style.display = 'none';
+        });
+    });
+
+    // Function to handle form submission
+    function updateTransaction(transactionId) {
+        // Get the form data
+        const formData = new FormData(document.getElementById(`edit-form-${transactionId}`));
+
+        // Send a POST request to update the transaction
+        fetch(`/update-transaction/${transactionId}/`, {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Transaction was updated successfully
+                // You can add code here to hide the edit form and update the UI as needed
+            } else {
+                // Handle validation errors or other issues
+                console.error(data.errors);
+                alert('Failed to update the transaction. Please check the form for errors.');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert('An error occurred while updating the transaction.');
+        });
+    }
+
+    // Attach an event listener to each "Save" button
+    saveButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const transactionId = button.getAttribute('data-transaction-id');
+            updateTransaction(transactionId);
+        });
+    });
+</script>
+
+  
+{% endblock %}

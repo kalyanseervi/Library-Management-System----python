@@ -1,118 +1,52 @@
-<!-- book_list.html -->
 {% extends "index.html" %}
 
 {% block content %}
-<h1>Book List</h1>
-
-<table>
-    <thead>
-        <tr>
-            <th>Book ID</th>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for book in books %}
-        <div class="book" id="book-{{ book.id }}">
-            <h2>{{ book.title }}</h2>
-            <p>{{ book.author }}</p>
-            <a href="#" class="edit-book" data-id="{{ book.id }}" data-title="{{ book.title }}" data-author="{{ book.author }}">Edit</a>
-            <a href="#" class="delete-book" data-id="{{ book.id }}">Delete</a>
+<div class="bg-trueGray-100 py-10">
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded shadow-lg">
+        <h1 class="text-2xl font-semibold mb-4">Book List</h1>
+        <div class="mb-4">
+            <a href="{% url 'create_book' %}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add Book</a>
         </div>
-        {% endfor %}
-        
-    </tbody>
-</table>
-
-
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-$(document).ready(function() {
-    // Variables to store book data
-    let currentBookId;
-    let currentBookTitle;
-    let currentBookAuthor;
-
-    // Edit button click event
-    $(".edit-book").click(function() {
-        currentBookId = $(this).data("id");
-        currentBookTitle = $(this).data("title");
-        currentBookAuthor = $(this).data("author");
-
-        // Show a modal with an edit form
-        // You can use a library like Bootstrap modal or create your own modal
-        // For this example, let's assume you have a Bootstrap modal
-        $("#editModal").modal("show");
-
-        // Populate the edit form with the current book data
-        $("#editTitle").val(currentBookTitle);
-        $("#editAuthor").val(currentBookAuthor);
-    });
-
-    // Save changes in the edit form
-    $("#editSave").click(function() {
-        // Get updated values from the form
-        const newTitle = $("#editTitle").val();
-        const newAuthor = $("#editAuthor").val();
-
-        // Send an AJAX request to update the book
-        $.ajax({
-            method: "POST",
-            url: `/amsapp/book/${currentBookId}/edit/`,
-            data: {
-                title: newTitle,
-                author: newAuthor,
-                csrfmiddlewaretoken: "{{ csrf_token }}"
-            },
-            success: function(response) {
-                // Handle the success response
-                // Close the modal and update the book data on the page
-                $("#editModal").modal("hide");
-                currentBookTitle = newTitle;
-                currentBookAuthor = newAuthor;
-                // Update the book details on the page as needed
-            },
-            error: function(error) {
-                // Handle the error response
-                alert("Failed to update the book. Please try again.");
-            }
-        });
-    });
-
-    // Delete button click event
-    $(".delete-book").click(function() {
-        currentBookId = $(this).data("id");
-
-        // Show a confirmation modal
-        // You can use a library like Bootstrap modal or create your own modal
-        // For this example, let's assume you have a Bootstrap modal
-        $("#deleteModal").modal("show");
-    });
-
-    // Confirm deletion
-    $("#confirmDelete").click(function() {
-        // Send an AJAX request to delete the book
-        $.ajax({
-            method: "POST",
-            url: `/amsapp/book/${currentBookId}/delete/`,
-            data: {
-                csrfmiddlewaretoken: "{{ csrf_token }}"
-            },
-            success: function(response) {
-                // Handle the success response
-                // Close the modal and remove the book from the page
-                $("#deleteModal").modal("hide");
-                $(`#book-${currentBookId}`).remove(); // Remove the book element
-            },
-            error: function(error) {
-                // Handle the error response
-                alert("Failed to delete the book. Please try again.");
-            }
-        });
-    });
-});
-</script>
+        <!-- Search Bar -->
+        <div class="mb-4">
+            <input type="text" class="border border-gray-300 rounded p-2 w-full" placeholder="Search Books">
+        </div>
+        <!-- Table -->
+        <table class="w-full border border-gray-300 rounded">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="p-2">Index</th>
+                    <th class="p-2">Title</th>
+                    <th class="p-2">Author</th>
+                    <th class="p-2">Category</th>
+                    <th class="p-2">Publication Date</th>
+                    <th class="p-2">Description</th>
+                    <th class="p-2">ISBN</th>
+                    <th class="p-2">Language</th>
+                    <th class="p-2">Dealer</th>
+                    <th class="p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr class="border-b border-gray-300">
+                    <td class="p-2">{{ forloop.counter }}</td>
+                    <td class="p-2">{{ book.title }}</td>
+                    <td class="p-2">{{ book.author }}</td>
+                    <td class="p-2">{{ book.category }}</td>
+                    <td class="p-2">{{ book.pub_date }}</td>
+                    <td class="p-2">{{ book.description }}</td>
+                    <td class="p-2">{{ book.isbn_no }}</td>
+                    <td class="p-2">{{ book.language }}</td>
+                    <td class="p-2">{{ book.bookDealer.Name }}</td>
+                    <td class="p-2">
+                        <button class="edit-book bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">Edit</button>
+                        <button class="delete-book bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

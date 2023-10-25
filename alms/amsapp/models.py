@@ -1,13 +1,35 @@
 from django.core.validators import MaxValueValidator
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db.models import Max
 from django.forms import ValidationError
 from django.utils import timezone
 
 
-# Create your models here.
+# Create your models here..
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    mobile_number = models.CharField(max_length=15, help_text='Required. Enter your mobile number.')
+
+    GENDER_CHOICES = (
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    )
+    
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
+
+    Address = models.CharField(max_length=100, help_text='Required. Enter address.')
+    pincode = models.CharField(max_length=10, blank=True, null=True)
+    district = models.CharField(max_length=50, blank=True, null=True)
+    state = models.CharField(max_length=50, blank=True, null=True)
+    postName = models.CharField(max_length=50, blank=True, null=True)
+    
+
+    def __str__(self):
+        return f'{self.user.username} Profile'
+ 
 class Cart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)  # Associate carts with users
     items = models.ManyToManyField('Book')  # Assuming you have a Book model
@@ -210,61 +232,57 @@ class BookStock2(models.Model):
             return True
         else:
             return False
-# class Book_transaction(models.Model):
-#     tr_id = models.AutoField(primary_key=True)
-#     book = models.ForeignKey(BookStock2, on_delete=models.CASCADE, default=None,)
-#     author = models.ForeignKey(BookStock2, on_delete=models.CASCADE, related_name='stocks', null=True,blank=True)
-#     username = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
-#     bookquantity = models.PositiveIntegerField()
-#     checkout = models.DateTimeField( null=True, blank=True)
-#     checkin_date = models.DateTimeField( null=True, blank=True)
-#     total_days = models.PositiveIntegerField(blank=True, null= True)
-#     perdayprice = models.BigIntegerField(blank=True)
-#     totalPrice = models.PositiveIntegerField(blank=True, null= True)
-#     grandtotalprice=models.BigIntegerField(blank=True, null= True)
-#     stock = models.BigIntegerField(blank=True,null= True)
-#     p_list = (
-#         ("cash", "cash"),
-#         ("net-banking", "net-banking"),
-#         ("UPI", "UPI"),
-#         ("Card", "Card"),
-#     )
-#     paymenttype = models.CharField( 'paymenttype', max_length=30,choices=p_list, default="cash")
-#     def str(self):
-#         return f" {self.book} ----  {self.username.name} "
-#         # Update the stock when a book is checked out
-#     def save(self, *args, **kwargs):
-#         if self.checkout and not self.checkin_date:
-#             try:
-#                 stock = BookStock2.objects.get(book=self.book, dealer=self.username)
-#                 if stock.quantity_in_stock >= self.bookquantity:
-#                     stock.quantity_in_stock -= self.bookquantity
-#                     stock.save()
-#                 else:
-#                     raise ValidationError("Insufficient stock for this book.")
-#             except BookStock2.DoesNotExist:
-#                 raise ValidationError("Stock entry not found for this book and dealer.")
-#         # Update the stock when a book is checked in
-#         elif self.checkin_date:
-#             try:
-#                 stock = BookStock2.objects.get(book=self.book, dealer=self.username)
-#                 stock.quantity_in_stock += self.bookquantity
-#                 stock.save()
-#             except BookStock2.DoesNotExist:
-#                 # If the BookStock2 entry does not exist, create a new one with the current book quantity
-#                 stock = BookStock2(
-#                     book=self.book,
-#                     dealer=self.username,
-#                     quantity_in_stock=self.bookquantity,
-#                     purchase_price=self.perbookprice,  # You may adjust this as needed
-#                     selling_price=self.perbookprice,  # You may adjust this as needed
-#                 )
-#                 stock.save()
+class Book_transaction(models.Model):
+    tr_id = models.AutoField(primary_key=True)
+    book = models.ForeignKey(BookStock2, on_delete=models.CASCADE, default=None)
+    author = models.ForeignKey(book2, on_delete=models.CASCADE, null=True, blank=True)
+    username = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
+    bookquantity = models.PositiveIntegerField()
+    checkout = models.DateTimeField(null=True, blank=True, default=timezone.now)
+    checkin_date = models.DateTimeField(null=True, blank=True)
+    perdayprice = models.BigIntegerField(blank=True)
+    total_days = models.PositiveIntegerField(blank=True, null=True)
+    totalPrice = models.PositiveIntegerField(blank=True, null=True)
+    grandtotalprice = models.BigIntegerField(blank=True, null=True)
+    paymenttype = models.CharField(
+        'paymenttype',
+        max_length=30,
+        choices=(
+            ("cash", "cash"),
+            ("net-banking", "net-banking"),
+            ("UPI", "UPI"),
+            ("Card", "Card"),
+        ),
+        default="cash"
+    )
+    def str(self):
+        return f"{self.book} - {self.username.name}"
 
-#         super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if self.checkout and not self.checkin_date:
+            try:
+                book_stock = BookStock2.objects.get(stock_id=self.book.stock_id)
+                if book_stock.quantity_in_stock >= self.bookquantity:
+                    # Update the BookStock2 model when a book is checked out
+                    book_stock.quantity_in_stock -= self.bookquantity
+                    book_stock.save()
+                else:
+                    raise ValidationError("Insufficient stock for this book.")
+            except BookStock2.DoesNotExist:
+                raise ValidationError("Stock entry not found for this book and author.")
+        elif self.checkin_date:
+            try:
+                book_stock = BookStock2.objects.get(stock_id=self.book.stock_id)
+                book_stock.quantity_in_stock += self.bookquantity
+                book_stock.save()
+            except BookStock2.DoesNotExist:
+                book_stock = BookStock2(
+                    stock_id=self.book.stock_id,
+                    quantity_in_stock=self.bookquantity,
+                )
+                book_stock.save()
 
-        # else:
-        # raise ValidationError("Both checkout and checkin dates are required.")
+        super().save(*args, **kwargs)
     
 
 class WishlistItem(models.Model):

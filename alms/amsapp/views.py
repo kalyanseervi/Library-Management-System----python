@@ -10,21 +10,20 @@ from .models import *
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import IntegrityError
 from datetime import datetime
-
 from django.utils import timezone  # Import timezone
 from datetime import timedelta  # Import timedelta
-
+from django.views.decorators.http import require_GET, require_POST
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse, JsonResponse
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from django.db.models import Q
-
+import json
+from webpush import send_user_notification
 # from .filters import PurchaseFilter
 from django.db.models import Max, Subquery, OuterRef
-from django.views.decorators.csrf import ensure_csrf_cookie
-
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from django.db import models
@@ -155,22 +154,40 @@ def book_search(request):
 
     return render(request, 'book_search.html', {'form': form})
 
+
 def register(request):
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.username = user.username.lower()
-            user.save()
-            messages.success(request, 'You have signed up successfully.')
-            login(request, user)
-            return redirect('index')
+        form = UserRegisterForm(request.POST)
+        p_reg_form = ProfileRegisterForm(request.POST)
+        if form.is_valid() and p_reg_form.is_valid():
+            user = form.save()
+            p_data = p_reg_form.cleaned_data  # Get profile form data
+
+            # Create the user's profile and set the pincode, district, and state
+            profile = Profile.objects.create(user=user, **p_data)
+
+            messages.success(request, 'Your account has been sent for approval!')
+            login(request, user)  # Automatically log in the user
+            return redirect('login')
+        else:
+            messages.error(request, 'Registration failed. Please check your data.')
+
     else:
-        form = RegisterForm()
-    return render(request, 'register.html', {'form': form})
+        form = UserRegisterForm()
+        p_reg_form = ProfileRegisterForm()
+
+    context = {
+        'form': form,
+        'p_reg_form': p_reg_form
+    }
+    return render(request, 'register.html', context)
 
 
 def loginform(request):
+    # Check if the user is already authenticated; if yes, redirect them to another page (e.g., index).
+    if request.user.is_authenticated:
+        return redirect('index')  # Replace 'index' with your desired URL name
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -180,15 +197,13 @@ def loginform(request):
             if user:
                 login(request, user)
                 messages.success(request, f'Hi {username.title()}, welcome back!')
-                return redirect('index')
+                return redirect('index')  # Redirect to the index page or another page
             else:
                 messages.error(request, 'Invalid username or password')
     else:
-        if request.user.is_authenticated:
-            return redirect('index')
         form = LoginForm()
-    return render(request, 'login.html', {'form': form})
 
+    return render(request, 'login.html', {'form': form})  # Replace 'login.html' with your login template path
 
 @login_required
 def sign_out(request):
@@ -743,6 +758,8 @@ def delete_dealer(request, dealer_id):
 
 # Create a new book
 def create_book(request):
+    dealers = dealers2.objects.all()
+    print(dealers)
     if request.method == 'POST':
         form = Book2Form(request.POST, request.FILES)
         if form.is_valid():
@@ -750,60 +767,52 @@ def create_book(request):
             return redirect('/amsapp/book/list')
     else:
         form = Book2Form()
-    return render(request, 'book/create_book.html', {'form': form})
+    return render(request, 'book/create_book.html', {'form': form,'dealers': dealers})
 
 # List all books
-
-
-
-
 def book_list(request):
     books = book2.objects.all()
     return render(request, 'book/book_list.html', {'books': books})
 
-def edit_book(request, pk):
-    book = get_object_or_404(book2, pk=pk)
-
+# Update an existing book
+def update_book(request, book_id):
+    book = get_object_or_404(book2, pk=book_id)
     if request.method == 'POST':
-        try:
-            new_title = request.POST.get('title')
-            new_author = request.POST.get('author')
-            book.title = new_title
-            book.author = new_author
-            book.save()
-            return JsonResponse({'message': 'Book updated successfully'})
-        except Exception as e:
-            return JsonResponse({'error': 'Failed to update the book'}, status=400)
+        form = Book2Form(request.POST, request.FILES, instance=book)
+        if form.is_valid():
+            form.save()
+            return redirect('/amsapp/book/list')
+    else:
+        form = Book2Form(instance=book)
+    return render(request, 'book/update_book.html', {'form': form})
 
-    return render(request, 'book/edit_book.html', {'book': book})
-
-def delete_book(request, pk):
-    book = get_object_or_404(book2, pk=pk)
-
+# Delete an existing book
+def delete_book(request, book_id):
+    book = get_object_or_404(book2, pk=book_id)
     if request.method == 'POST':
-        try:
-            book.delete()
-            return JsonResponse({'message': 'Book deleted successfully'})
-        except Exception as e:
-            return JsonResponse({'error': 'Failed to delete the book'}, status=400)
-
+        book.delete()
+        return redirect('/amsapp/book/list')  # Updated line
     return render(request, 'book/delete_book.html', {'book': book})
-
-
 
 # Create a new purchase
 def create_purchase(request):
+    books = book2.objects.all()
+    dealers = dealers2.objects.all()
     if request.method == 'POST':
         form = Purchase2Form(request.POST)
+        
         if form.is_valid():
             form.save()
             return redirect('purchase/purchase_list')
+        else:
+            print(form.errors)
     else:
         form = Purchase2Form()
-    return render(request, 'purchase/create_purchase.html', {'form': form})
+    return render(request, 'purchase/create_purchase.html', {'form': form,'books':books,'dealers':dealers})
 
 # List all purchases
 def purchase_list(request):
+
     purchases = purchase2.objects.all()
     return render(request, 'purchase/purchase_list.html', {'purchases': purchases})
 
@@ -828,6 +837,39 @@ def delete_purchase(request, purchase_id):
     return render(request, 'purchase/delete_purchase.html', {'purchase': purchase})
 
 # Create similar views for 'book2', 'purchase2', 'R_Purchase', 'BookStock2', and 'Book_transaction' models.
+
+def book_stock(request):
+    # Retrieve book stock records from the database
+    stocks = BookStock2.objects.all()
+
+    # Pass the data to the template
+    return render(request, 'returnPurhase/bookstock.html', {'stocks': stocks})
+
+def create_book_transaction(request):
+    if request.method == 'POST':
+        form = BookTransactionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('book_transaction_list')
+    else:
+        form = BookTransactionForm()
+    
+    return render(request, 'book_transaction/book_transaction_form.html', {'form': form})
+
+def book_transaction_list(request):
+    transactions = Book_transaction.objects.all()
+    return render(request, 'book_transaction/book_transaction_list.html', {'transactions': transactions})
+
+@require_POST
+def update_book_transaction(request, transaction_id):
+    transaction = Book_transaction.objects.get(pk=transaction_id)
+    form = BookTransactionForm(request.POST, instance=transaction)
+
+    if form.is_valid():
+        form.save()
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'errors': form.errors})
 
 
 @login_required
@@ -874,3 +916,53 @@ def get_wishlist(request):
             wishlist_data.append('Data Not Found')
 
     return render(request, 'wishlist.html', {'wishlist_data': wishlist_data})
+
+
+@login_required
+def settings(request):
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Your profile has been updated!')
+            return redirect('settings')
+
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        profile_form = ProfileUpdateForm(instance=request.user.profile)
+
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form
+    }
+
+    return render(request, 'settings.html', context)
+
+
+def pushNtf(request):
+   webpush_settings = getattr(settings, 'WEBPUSH_SETTINGS', {})
+   vapid_key = webpush_settings.get('VAPID_PUBLIC_KEY')
+   user = request.user
+   return render(request, 'pushNtf.html', {user: user, 'vapid_key': vapid_key})
+
+@require_POST
+@csrf_exempt
+def send_push(request):
+    try:
+        body = request.body
+        data = json.loads(body)
+
+        if 'head' not in data or 'body' not in data or 'id' not in data:
+            return JsonResponse(status=400, data={"message": "Invalid data format"})
+
+        user_id = data['id']
+        user = get_object_or_404(User, pk=user_id)
+        payload = {'head': data['head'], 'body': data['body']}
+        send_user_notification(user=user, payload=payload, ttl=1000)
+
+        return JsonResponse(status=200, data={"message": "Web push successful"})
+    except TypeError:
+        return JsonResponse(status=500, data={"message": "An error occurred"})
