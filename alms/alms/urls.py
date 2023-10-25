@@ -19,12 +19,15 @@ from django.views.generic import RedirectView
 from django.urls import path, include
 from django.conf.urls.static import static
 from . import settings
+from django.views.generic import TemplateView
+
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('amsapp/', include('amsapp.urls')),
     path('', RedirectView.as_view(url='amsapp/')),
+    path('sw.js/', TemplateView.as_view(template_name='sw.js', content_type='application/x-javascript'))
 ]
 
 if settings.DEBUG:

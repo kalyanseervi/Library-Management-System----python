@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'webpush',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -36,7 +37,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'amsapp.apps.AmsappConfig',
-    
 ]
 
 MIDDLEWARE = [
@@ -55,7 +55,7 @@ ROOT_URLCONF = 'alms.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,6 +72,7 @@ WSGI_APPLICATION = 'alms.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
 DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -96,6 +97,12 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+WEBPUSH_SETTINGS = {
+   "VAPID_PUBLIC_KEY": "BO42R6pw1I6ZAApWEZmQRpJaU10Pe43NElZsBSDXvwXxp-I0iqa5npekmbWul3MeHuTFX5ainJ4dLvOL5QmmyDs",
+   "VAPID_PRIVATE_KEY": "J3b7xdhLfAbPuTHt4xWZ2u-VBx0a9FvjnTeh7DSDWl8",
+   "VAPID_ADMIN_EMAIL": "firebase-adminsdk-z78ht@alms-399411.iam.gserviceaccount.com"
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -128,11 +135,14 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # TE_URL = 'node_modules/'
 # STATICFILES_DIRS = [
-#   BASE_DIR / "static",
-#   BASE_DIR.parent / "node_modules",
+#   os.path.join(BASE_DIR, "static"),
 # ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-APPEND_SLASH = False
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+
+
 
 
